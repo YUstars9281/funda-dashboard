@@ -1,0 +1,2753 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ファンダ判断フォーマット</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: 'Helvetica Neue', Arial, 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
+  background: #0d1117;
+  color: #e6edf3;
+  min-height: 100vh;
+}
+
+/* ===== 全体 ===== */
+.app-wrap { display: flex; min-height: 100vh; }
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 24px;
+  padding-left: 84px;
+}
+
+/* ===== サイドバー ===== */
+.sidebar-toggle {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 220;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #8b949e;
+  transition: .2s;
+  box-shadow: 0 2px 10px rgba(0,0,0,.35);
+}
+.sidebar-toggle:hover { background: #21262d; color: #e6edf3; }
+.sidebar-toggle .badge {
+  background: #1f6feb;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 1px 7px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  z-index: 180;
+}
+.sidebar-overlay.open { display: block; }
+
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  width: 270px;
+  z-index: 200;
+  background: #010409;
+  border-right: 1px solid #21262d;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform .25s ease;
+}
+.sidebar.open { transform: translateX(0); }
+
+.sidebar-header {
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid #21262d;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sidebar-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #58a6ff;
+}
+.sidebar-sub {
+  font-size: 11px;
+  color: #6e7681;
+  margin-top: 2px;
+}
+.sidebar-close {
+  background: none;
+  border: none;
+  color: #6e7681;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+.sidebar-close:hover {
+  background: #21262d;
+  color: #e6edf3;
+}
+.sidebar-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+.sidebar-empty {
+  padding: 20px 14px;
+  font-size: 12px;
+  color: #6e7681;
+  text-align: center;
+  line-height: 1.7;
+}
+
+/* ===== 保存項目 ===== */
+.saved-item {
+  padding: 10px 14px;
+  border-bottom: 1px solid #21262d;
+  transition: background .15s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.saved-item:hover { background: #161b22; }
+.saved-item.active {
+  background: #0d2044;
+  border-left: 3px solid #58a6ff;
+}
+.drag-handle {
+  color: #3d4460;
+  font-size: 16px;
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0;
+}
+.drag-handle:active { cursor: grabbing; }
+
+.saved-main {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+.saved-code {
+  font-size: 13px;
+  font-weight: 700;
+  color: #e6edf3;
+}
+.saved-name {
+  font-size: 11px;
+  color: #8b949e;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.saved-meta {
+  font-size: 10px;
+  color: #6e7681;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.saved-result {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+.saved-result.pass { background: #0d2d1a; color: #3fb950; }
+.saved-result.fail { background: #2d0d0d; color: #f85149; }
+.saved-result.review { background: #2d2200; color: #d29922; }
+
+.del-btn {
+  background: none;
+  border: none;
+  color: #6e7681;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 5px 7px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.del-btn:hover {
+  background: #2d0d0d;
+  color: #f85149;
+}
+.saved-item.drag-over {
+  border-top: 2px solid #58a6ff;
+  background: #0d2044;
+}
+
+/* ===== 見出し ===== */
+h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #58a6ff;
+  margin-bottom: 8px;
+  text-align: center;
+}
+.subtitle {
+  text-align: center;
+  color: #8b949e;
+  font-size: 13px;
+  margin-bottom: 22px;
+  line-height: 1.7;
+}
+
+/* ===== モデルボタン・タブ ===== */
+.model-bar {
+  max-width: 860px;
+  margin: 0 auto 10px;
+  display: flex;
+  gap: 4px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 4px;
+}
+.model-btn {
+  flex: 1;
+  padding: 6px 4px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #8b949e;
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: .2s;
+}
+.model-btn.active-blue {
+  background: rgba(88,166,255,.18);
+  color: #58a6ff;
+}
+.model-btn.active-gold {
+  background: rgba(210,153,34,.18);
+  color: #d29922;
+}
+.model-label {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-family: monospace;
+  font-size: 10px;
+  color: #6e7681;
+  white-space: nowrap;
+}
+
+.tabs {
+  max-width: 860px;
+  margin: 0 auto 18px;
+  display: flex;
+  gap: 6px;
+}
+.tab-btn {
+  flex: 1;
+  padding: 10px 6px;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  background: transparent;
+  color: #8b949e;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: .2s;
+}
+.tab-btn.active {
+  border-color: #1f6feb;
+  background: rgba(31,111,235,.15);
+  color: #58a6ff;
+}
+
+/* ===== 入力 ===== */
+.input-row {
+  max-width: 580px;
+  margin: 0 auto 28px;
+  display: flex;
+  gap: 10px;
+}
+.input-row input {
+  flex: 1;
+  padding: 12px 16px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  color: #e6edf3;
+  font-size: 16px;
+  outline: none;
+  transition: border-color .2s;
+}
+.input-row input:focus { border-color: #58a6ff; }
+
+.btn {
+  padding: 12px 22px;
+  background: #1f6feb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: .2s;
+  white-space: nowrap;
+}
+.btn:hover { background: #388bfd; }
+.btn:disabled {
+  background: #21262d;
+  color: #6e7681;
+  cursor: not-allowed;
+}
+
+/* ===== 保存バー ===== */
+.save-bar {
+  max-width: 860px;
+  margin: 0 auto 16px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+.save-btn {
+  padding: 8px 18px;
+  background: #238636;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.save-btn:hover { background: #2ea043; }
+.save-btn:disabled {
+  background: #21262d;
+  color: #6e7681;
+  cursor: not-allowed;
+}
+.save-done {
+  color: #3fb950;
+  font-size: 12px;
+}
+
+/* ===== ローディング ===== */
+#loading {
+  display: none;
+  text-align: center;
+  padding: 40px 20px;
+}
+.spinner {
+  width: 42px;
+  height: 42px;
+  border: 3px solid #21262d;
+  border-top-color: #58a6ff;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  margin: 0 auto 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#loadingMsg {
+  color: #e6edf3;
+  font-size: 15px;
+  font-weight: 700;
+}
+#loadingSub {
+  color: #6e7681;
+  font-size: 12px;
+  margin-top: 6px;
+}
+.phase-bar {
+  max-width: 400px;
+  margin: 16px auto 0;
+}
+.phase-steps {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+.phase-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #21262d;
+  transition: .4s;
+}
+.phase-dot.active { background: #58a6ff; }
+.phase-dot.done { background: #238636; }
+.phase-label {
+  font-size: 11px;
+  color: #6e7681;
+  text-align: center;
+}
+
+/* ===== エラー ===== */
+#errorBox {
+  display: none;
+  max-width: 580px;
+  margin: 0 auto 20px;
+  background: #2d0d0d;
+  border: 1px solid #da3633;
+  border-radius: 8px;
+  padding: 14px 18px;
+}
+#errorTitle {
+  color: #f85149;
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+#errorDetail {
+  color: #c9d1d9;
+  font-size: 12px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.retry-btn {
+  margin-top: 10px;
+  padding: 7px 16px;
+  background: #da3633;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.retry-btn:hover { background: #f85149; }
+
+/* ===== 結果エリア ===== */
+#results {
+  display: none;
+  max-width: 860px;
+  margin: 0 auto;
+}
+.company-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.company-name {
+  font-size: 24px;
+  font-weight: 700;
+  color: #f0f6fc;
+}
+.company-sub {
+  font-size: 13px;
+  color: #8b949e;
+  margin-top: 4px;
+  line-height: 1.7;
+}
+.earnings-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.earnings-badge.warn {
+  background: #2d2200;
+  border: 1px solid #d29922;
+  color: #d29922;
+}
+.earnings-badge.ok {
+  background: #0d1f12;
+  border: 1px solid #238636;
+  color: #3fb950;
+}
+
+/* ===== 指標 ===== */
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.metric-card {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+}
+.metric-label {
+  font-size: 11px;
+  color: #8b949e;
+  margin-bottom: 4px;
+}
+.metric-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #e6edf3;
+}
+.metric-bench {
+  font-size: 10px;
+  margin-top: 4px;
+  border-top: 1px solid #21262d;
+  padding-top: 4px;
+}
+.metric-bench.good { color: #3fb950; }
+.metric-bench.warn { color: #d29922; }
+.metric-bench.bad { color: #f85149; }
+
+#metricsSources {
+  display: none;
+  margin: -10px auto 18px;
+  max-width: 860px;
+  padding: 0 4px;
+}
+
+/* ===== ステップ ===== */
+.flow-hint {
+  max-width: 860px;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: #6e7681;
+}
+.flow-tag {
+  background: #21262d;
+  border-radius: 4px;
+  padding: 2px 8px;
+}
+
+.step-card {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.step-card.pass { border-left: 4px solid #238636; }
+.step-card.fail { border-left: 4px solid #da3633; }
+.step-card.exception { border-left: 4px solid #d29922; }
+.step-card.info { border-left: 4px solid #58a6ff; }
+.step-card.tokimeki {
+  border-left: 4px solid #ff79c6;
+  border-top: 1px solid rgba(255,121,198,.45);
+  border-right: 1px solid rgba(255,121,198,.45);
+  border-bottom: 1px solid rgba(255,121,198,.45);
+}
+.step-card.loading-card {
+  border-left: 4px solid #30363d;
+  opacity: .55;
+}
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  user-select: none;
+}
+.step-num {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+  background: #21262d;
+  color: #8b949e;
+}
+.pass .step-num { background: #238636; color: #fff; }
+.fail .step-num { background: #da3633; color: #fff; }
+.exception .step-num { background: #d29922; color: #fff; }
+.info .step-num { background: #1f6feb; color: #fff; }
+.tokimeki .step-num { background: #e0569e; color: #fff; }
+
+.step-info {
+  flex: 1;
+  min-width: 0;
+}
+.step-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #e6edf3;
+}
+.step-crit {
+  font-size: 11px;
+  color: #8b949e;
+  margin-top: 2px;
+}
+.step-val {
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.pass .step-val { color: #3fb950; }
+.fail .step-val { color: #f85149; }
+.exception .step-val { color: #d29922; }
+.info .step-val { color: #58a6ff; }
+.tokimeki .step-val { color: #ff79c6; }
+
+.step-badge {
+  font-size: 17px;
+  flex-shrink: 0;
+}
+.step-arrow {
+  color: #8b949e;
+  font-size: 10px;
+  transition: transform .2s;
+  flex-shrink: 0;
+}
+.step-arrow.open { transform: rotate(90deg); }
+
+.step-body {
+  padding: 0 16px 14px 54px;
+  font-size: 13px;
+  color: #8b949e;
+  line-height: 1.8;
+  display: none;
+}
+.step-body.open { display: block; }
+
+.exc-note {
+  background: #2d2200;
+  border: 1px solid rgba(210,153,34,.25);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #d29922;
+}
+
+/* ===== ときめき・PL ===== */
+.tokimeki-box {
+  background: linear-gradient(135deg, #2a0f30, #1a0a22);
+  border: 1px solid rgba(255,121,198,.35);
+  border-radius: 8px;
+  padding: 14px;
+  margin-top: 4px;
+}
+.tokimeki-title {
+  font-size: 15px;
+  color: #ff79c6;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.tokimeki-text {
+  color: #c9d1d9;
+  line-height: 1.8;
+  font-size: 13px;
+}
+@keyframes heartbeat {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.35); }
+}
+.heart {
+  display: inline-block;
+  animation: heartbeat .9s ease-in-out infinite;
+}
+.biz-box {
+  color: #c9d1d9;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  font-size: 13px;
+}
+.dream-bar {
+  margin-top: 12px;
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #8b949e;
+}
+.sub-list {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sub-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+.sub-item.pass { border-left: 3px solid #238636; }
+.sub-item.fail { border-left: 3px solid #da3633; }
+.sub-item.warn { border-left: 3px solid #d29922; }
+.sub-badge {
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.sub-content {
+  flex: 1;
+  min-width: 0;
+}
+.sub-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #c9d1d9;
+}
+.sub-check {
+  font-size: 11px;
+  color: #6e7681;
+}
+.sub-note {
+  font-size: 12px;
+  color: #8b949e;
+  margin-top: 3px;
+}
+
+/* ===== ソースリンク ===== */
+.sources-box {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #21262d;
+}
+.sources-label {
+  font-size: 11px;
+  color: #6e7681;
+  margin-bottom: 4px;
+}
+.source-link {
+  display: inline-block;
+  margin: 2px 4px 2px 0;
+  font-size: 11px;
+  color: #58a6ff;
+  text-decoration: none;
+  background: #0d2044;
+  border: 1px solid rgba(31,111,235,.25);
+  border-radius: 4px;
+  padding: 2px 8px;
+}
+.source-link:hover { background: rgba(31,111,235,.18); }
+
+/* ===== 総合判定 ===== */
+.overall {
+  max-width: 860px;
+  margin: 18px auto 0;
+  padding: 18px 20px;
+  border-radius: 10px;
+  text-align: center;
+}
+.overall.pass {
+  background: #0d2d1a;
+  border: 1px solid #238636;
+}
+.overall.fail {
+  background: #2d0d0d;
+  border: 1px solid #da3633;
+}
+.overall.review {
+  background: #2d2200;
+  border: 1px solid #d29922;
+}
+.overall-title {
+  font-size: 17px;
+  font-weight: 700;
+}
+.overall.pass .overall-title { color: #3fb950; }
+.overall.fail .overall-title { color: #f85149; }
+.overall.review .overall-title { color: #d29922; }
+.overall-comment {
+  font-size: 13px;
+  color: #8b949e;
+  margin-top: 6px;
+  line-height: 1.7;
+}
+
+/* ===== 決算タブ ===== */
+#panel-earnings {
+  display: none;
+  max-width: 860px;
+  margin: 0 auto;
+}
+.earn-section {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.earn-sec-h {
+  padding: 12px 16px;
+  border-bottom: 1px solid #21262d;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.earn-sec-ico {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.earn-sec-ttl {
+  font-size: 14px;
+  font-weight: 700;
+}
+.earn-body { padding: 14px 16px; }
+
+.earn-label {
+  font-size: 12px;
+  color: #8b949e;
+  margin-bottom: 5px;
+}
+.earn-select,
+.earn-input {
+  width: 100%;
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 7px;
+  padding: 9px 11px;
+  color: #e6edf3;
+  font-size: 13px;
+  outline: none;
+  margin-bottom: 10px;
+}
+.earn-select:focus,
+.earn-input:focus { border-color: #58a6ff; }
+
+.use-type-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.use-type-btn {
+  flex: 1;
+  padding: 8px 4px;
+  border: 1px solid #30363d;
+  border-radius: 7px;
+  background: transparent;
+  color: #8b949e;
+  font-size: 12px;
+  cursor: pointer;
+  transition: .15s;
+}
+.use-type-btn.on {
+  background: rgba(31,111,235,.15);
+  border-color: #1f6feb;
+  color: #58a6ff;
+  font-weight: 700;
+}
+
+.upload-area {
+  border: 2px dashed #30363d;
+  border-radius: 10px;
+  padding: 28px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: .2s;
+  margin-bottom: 10px;
+}
+.upload-area:hover,
+.upload-area.drag {
+  border-color: #58a6ff;
+  background: rgba(31,111,235,.05);
+}
+.upload-area-ico {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+.upload-area-txt {
+  font-size: 13px;
+  color: #8b949e;
+  margin-bottom: 4px;
+}
+.upload-area-sub {
+  font-size: 11px;
+  color: #6e7681;
+}
+#earnFileInput { display: none; }
+
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 7px;
+  padding: 9px 12px;
+  margin-bottom: 6px;
+}
+.file-ico { font-size: 18px; flex-shrink: 0; }
+.file-name {
+  flex: 1;
+  font-size: 12px;
+  color: #c9d1d9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.file-size {
+  font-size: 11px;
+  color: #6e7681;
+  flex-shrink: 0;
+}
+.file-del {
+  background: none;
+  border: none;
+  color: #6e7681;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.file-del:hover {
+  color: #f85149;
+  background: #2d0d0d;
+}
+
+.earn-run-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, rgba(88,166,255,.2), rgba(88,166,255,.08));
+  border: 1px solid rgba(88,166,255,.35);
+  border-radius: 10px;
+  color: #58a6ff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: .2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.earn-run-btn:hover {
+  background: linear-gradient(135deg, rgba(88,166,255,.3), rgba(88,166,255,.14));
+}
+.earn-run-btn:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+.earn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(88,166,255,.3);
+  border-top-color: #58a6ff;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  display: none;
+  flex-shrink: 0;
+}
+.earn-err {
+  background: rgba(255,69,96,.08);
+  border: 1px solid rgba(255,69,96,.25);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #f85149;
+  display: none;
+  margin-bottom: 10px;
+}
+.earn-err.on { display: block; }
+
+.earn-kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.earn-kpi {
+  border-radius: 9px;
+  padding: 14px;
+  border: 1px solid #30363d;
+}
+.earn-kpi.pass {
+  background: rgba(35,134,54,.08);
+  border-color: rgba(35,134,54,.35);
+}
+.earn-kpi.fail {
+  background: rgba(218,54,51,.08);
+  border-color: rgba(218,54,51,.35);
+}
+.earn-kpi.watch {
+  background: rgba(210,153,34,.08);
+  border-color: rgba(210,153,34,.3);
+}
+.earn-kpi-label {
+  font-size: 11px;
+  color: #8b949e;
+  margin-bottom: 4px;
+}
+.earn-kpi-val {
+  font-size: 19px;
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+.earn-kpi.pass .earn-kpi-val { color: #3fb950; }
+.earn-kpi.fail .earn-kpi-val { color: #f85149; }
+.earn-kpi.watch .earn-kpi-val { color: #d29922; }
+.earn-kpi-sub {
+  font-size: 11px;
+  color: #8b949e;
+  line-height: 1.7;
+}
+.earn-kpi-badge {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.earn-kpi.pass .earn-kpi-badge { background: #0d2d1a; color: #3fb950; }
+.earn-kpi.fail .earn-kpi-badge { background: #2d0d0d; color: #f85149; }
+.earn-kpi.watch .earn-kpi-badge { background: #2d2200; color: #d29922; }
+
+.diff-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 4px;
+}
+.diff-table th {
+  background: #21262d;
+  color: #8b949e;
+  padding: 6px 10px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+}
+.diff-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #21262d;
+  color: #c9d1d9;
+  vertical-align: top;
+}
+.diff-table tr:last-child td { border-bottom: none; }
+.diff-up { color: #3fb950; font-weight: 700; }
+.diff-down { color: #f85149; font-weight: 700; }
+.diff-neutral { color: #8b949e; }
+
+.earn-verdict {
+  border-radius: 10px;
+  padding: 18px 20px;
+  text-align: center;
+  margin-bottom: 14px;
+}
+.earn-verdict.hold,
+.earn-verdict.pass {
+  background: #0d2d1a;
+  border: 1px solid #238636;
+}
+.earn-verdict.partial {
+  background: #2d2200;
+  border: 1px solid #d29922;
+}
+.earn-verdict.exit {
+  background: #2d0d0d;
+  border: 1px solid #da3633;
+}
+.earn-verdict.newbuy {
+  background: #0d1f38;
+  border: 1px solid #1f6feb;
+}
+.earn-verdict-ico {
+  font-size: 30px;
+  margin-bottom: 6px;
+}
+.earn-verdict-ttl {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.earn-verdict.hold .earn-verdict-ttl,
+.earn-verdict.pass .earn-verdict-ttl { color: #3fb950; }
+.earn-verdict.partial .earn-verdict-ttl { color: #d29922; }
+.earn-verdict.exit .earn-verdict-ttl { color: #f85149; }
+.earn-verdict.newbuy .earn-verdict-ttl { color: #58a6ff; }
+.earn-verdict-reason {
+  font-size: 13px;
+  color: #8b949e;
+  margin-bottom: 10px;
+  line-height: 1.7;
+}
+.earn-action-box {
+  background: rgba(255,255,255,.04);
+  border-radius: 7px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #e6edf3;
+  font-weight: 700;
+}
+.earn-action-box-lbl {
+  font-size: 11px;
+  color: #8b949e;
+  margin-bottom: 4px;
+}
+
+/* ===== 確認ダイアログ ===== */
+#confirmOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.65);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+}
+.confirm-box {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 14px;
+  padding: 24px 22px;
+  max-width: 290px;
+  width: 90%;
+  text-align: center;
+}
+.confirm-icon {
+  font-size: 22px;
+  margin-bottom: 10px;
+}
+#confirmMsg {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #e6edf3;
+}
+.confirm-sub {
+  font-size: 12px;
+  color: #8b949e;
+  margin-bottom: 20px;
+}
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+}
+.confirm-btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.confirm-cancel {
+  background: transparent;
+  border: 1px solid #30363d;
+  color: #8b949e;
+}
+.confirm-danger {
+  background: rgba(218,54,51,.15);
+  border: 1px solid rgba(218,54,51,.4);
+  color: #f85149;
+  font-weight: 700;
+}
+
+/* ===== レスポンシブ ===== */
+@media (max-width: 900px) {
+  .metrics-row { grid-template-columns: repeat(3, 1fr); }
+  .earn-kpi-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .main { padding: 20px 14px 24px 14px; }
+  .sidebar-toggle { position: static; margin: 12px auto 0; }
+  .input-row { flex-direction: column; }
+  .metrics-row { grid-template-columns: repeat(2, 1fr); }
+  .step-header { align-items: flex-start; }
+  .step-body { padding-left: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="app-wrap">
+
+  <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
+    📁 保存銘柄 <span class="badge" id="savedBadge">0</span>
+  </button>
+
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div>
+        <div class="sidebar-title">📁 保存済み銘柄</div>
+        <div class="sidebar-sub" id="savedCount">0件</div>
+      </div>
+      <button class="sidebar-close" onclick="closeSidebar()">✕</button>
+    </div>
+    <div class="sidebar-list" id="sidebarList">
+      <div class="sidebar-empty">
+        保存された銘柄はありません。<br>
+        分析後に「保存」ボタンを押してください。
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <h1>📊 ファンダメンタル割安割高 判断フォーマット</h1>
+    <p class="subtitle">
+      配当力・財務健全性・株主還元意識・PL品質を9ステップで確認
+    </p>
+
+    <div class="model-bar">
+      <button id="model-sonnet" class="model-btn active-blue" onclick="setModel('sonnet')">Sonnet 4.6</button>
+      <button id="model-opus" class="model-btn" onclick="setModel('opus')">Opus 4.6</button>
+      <div class="model-label">使用モデル</div>
+    </div>
+
+    <div class="tabs">
+      <button id="tab-btn-analysis" class="tab-btn active" onclick="switchMainTab('analysis')">📊 9ステップ分析</button>
+      <button id="tab-btn-earnings" class="tab-btn" onclick="switchMainTab('earnings')">📄 決算分析</button>
+    </div>
+
+    <!-- ===== 9ステップ分析 ===== -->
+    <section id="panel-analysis">
+      <div class="input-row">
+        <input id="codeInput" type="text" placeholder="証券コードを入力（例：7203）" maxlength="6">
+        <button class="btn" id="analyzeBtn" onclick="runAnalysis()">分析スタート</button>
+      </div>
+
+      <div id="loading">
+        <div class="spinner"></div>
+        <div id="loadingMsg">準備中...</div>
+        <div id="loadingSub"></div>
+        <div class="phase-bar">
+          <div class="phase-steps">
+            <div class="phase-dot" id="dot0"></div>
+            <div class="phase-dot" id="dot1"></div>
+            <div class="phase-dot" id="dot2"></div>
+          </div>
+          <div class="phase-label" id="phaseLabel"></div>
+        </div>
+      </div>
+
+      <div id="errorBox">
+        <div id="errorTitle">⚠️ エラーが発生しました</div>
+        <div id="errorDetail"></div>
+        <button class="retry-btn" onclick="retryRun()">🔄 再試行する</button>
+      </div>
+
+      <div id="results">
+        <div class="save-bar">
+          <span id="saveDone" class="save-done" style="display:none">✅ 保存しました</span>
+          <button class="save-btn" id="saveBtn" onclick="saveResult()">💾 この分析を保存</button>
+        </div>
+
+        <div class="company-header">
+          <div class="company-name" id="cName"></div>
+          <div class="company-sub" id="cSub"></div>
+          <div id="earningsBadge"></div>
+        </div>
+
+        <div class="metrics-row" id="metricsRow"></div>
+        <div id="metricsSources"></div>
+
+        <div class="flow-hint" id="flowHint"></div>
+        <div id="stepsWrap"></div>
+
+        <div class="overall" id="overall"></div>
+      </div>
+    </section>
+
+    <!-- ===== 決算分析 ===== -->
+    <section id="panel-earnings">
+      <div class="earn-section">
+        <div class="earn-sec-h">
+          <div class="earn-sec-ico" style="background:rgba(88,166,255,.12)">🎯</div>
+          <div class="earn-sec-ttl">分析対象銘柄</div>
+        </div>
+        <div class="earn-body">
+          <div class="earn-label">使用目的</div>
+          <div class="use-type-row">
+            <button class="use-type-btn on" id="utype-hold" onclick="setUseType('hold')">📊 保有株の売買判断</button>
+            <button class="use-type-btn" id="utype-new" onclick="setUseType('new')">🔍 新規候補の事前調査</button>
+          </div>
+
+          <div class="earn-label">保存済み分析から選択（差分比較用・任意）</div>
+          <select id="earnStockSelect" class="earn-select" onchange="onEarnStockSelect()">
+            <option value="">── 選択なし（差分比較なし）──</option>
+          </select>
+
+          <div class="earn-label">証券コード（任意・未選択の場合に入力）</div>
+          <input id="earnCode" class="earn-input" type="text" placeholder="例: 7203" maxlength="6">
+
+          <div class="earn-label">銘柄名（任意）</div>
+          <input id="earnName" class="earn-input" type="text" placeholder="例: トヨタ自動車">
+        </div>
+      </div>
+
+      <div class="earn-section">
+        <div class="earn-sec-h">
+          <div class="earn-sec-ico" style="background:rgba(88,166,255,.12)">📄</div>
+          <div class="earn-sec-ttl">決算資料アップロード</div>
+          <span style="font-size:11px;color:#8b949e;margin-left:auto">PDF形式・最大2ファイル</span>
+        </div>
+        <div class="earn-body">
+          <div class="upload-area" id="uploadArea"
+               onclick="document.getElementById('earnFileInput').click()"
+               ondragover="onDragOver(event)"
+               ondragleave="onDragLeave(event)"
+               ondrop="onDrop(event)">
+            <div class="upload-area-ico">📂</div>
+            <div class="upload-area-txt">クリックまたはドラッグ&ドロップ</div>
+            <div class="upload-area-sub">決算短信・補足資料・決算説明資料など（PDF）</div>
+          </div>
+          <input type="file" id="earnFileInput" accept=".pdf" multiple onchange="onFileSelect(event)">
+          <div id="fileList"></div>
+        </div>
+      </div>
+
+      <button class="earn-run-btn" id="earnRunBtn" onclick="runEarningsAnalysis()">
+        <div class="earn-spinner" id="earnSp"></div>
+        <span id="earnRunTxt">🤖 決算を分析する</span>
+      </button>
+
+      <div class="earn-err" id="earnErr"></div>
+      <div id="earnResults" style="display:none;"></div>
+    </section>
+  </main>
+</div>
+
+<!-- ===== 確認ダイアログ ===== -->
+<div id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-icon">🗑</div>
+    <div id="confirmMsg"></div>
+    <div class="confirm-sub">この操作は取り消せません</div>
+    <div class="confirm-actions">
+      <button class="confirm-btn confirm-cancel" onclick="closeConfirm()">キャンセル</button>
+      <button class="confirm-btn confirm-danger" id="confirmOkBtn">削除する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== グローバル ===== */
+var lastCode = '';
+var currentData = null;
+var activeKey = null;
+var earnUseType = 'hold';
+var earnFiles = [];
+var currentModel = 'sonnet';
+var allStocks = {};
+var sidebarOrder = [];
+var dragSrcKey = null;
+
+/* ===== モデル定義（見た目用） ===== */
+var MODELS = {
+  sonnet: 'claude-sonnet-4-20250514',
+  opus: 'claude-opus-4-20250514'
+};
+
+/* ===== 共通ユーティリティ ===== */
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function formatNowJa() {
+  return new Date().toLocaleString('ja-JP', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function safeJsonParse(text, fallback) {
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    return fallback;
+  }
+}
+
+/* ===== localStorage ===== */
+function storageGetAll() {
+  return safeJsonParse(localStorage.getItem('funda_all'), {});
+}
+
+function storageSetAll(records) {
+  localStorage.setItem('funda_all', JSON.stringify(records));
+}
+
+function loadSidebarOrder() {
+  sidebarOrder = safeJsonParse(localStorage.getItem('funda_order'), []);
+  if (!Array.isArray(sidebarOrder)) sidebarOrder = [];
+}
+
+function saveSidebarOrder() {
+  localStorage.setItem('funda_order', JSON.stringify(sidebarOrder));
+}
+
+function makeStorageKey(code, ts) {
+  return (code || 'unknown') + '_' + ts;
+}
+
+function getSidebarOrder(keys) {
+  var ordered = sidebarOrder.filter(function(k) {
+    return keys.indexOf(k) !== -1;
+  });
+  keys.forEach(function(k) {
+    if (ordered.indexOf(k) === -1) ordered.push(k);
+  });
+  return ordered;
+}
+
+/* ===== サイドバー ===== */
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('open');
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+}
+
+function refreshSidebar() {
+  allStocks = storageGetAll() || {};
+  var keys = Object.keys(allStocks);
+  sidebarOrder = getSidebarOrder(keys);
+
+  var list = document.getElementById('sidebarList');
+  var countEl = document.getElementById('savedCount');
+  var badgeEl = document.getElementById('savedBadge');
+
+  badgeEl.textContent = keys.length;
+  countEl.textContent = keys.length + '件';
+
+  if (!keys.length) {
+    list.innerHTML =
+      '<div class="sidebar-empty">保存された銘柄はありません。<br>分析後に「保存」ボタンを押してください。</div>';
+    return;
+  }
+
+  list.innerHTML = '';
+
+  sidebarOrder.forEach(function(key) {
+    var d = allStocks[key];
+    if (!d) return;
+
+    var result = d.overallResult || 'review';
+    var resultLabel =
+      result === 'pass' ? '✅ 通過' :
+      result === 'fail' ? '❌ 未通過' : '⚠️ 要検討';
+
+    var activeClass = key === activeKey ? ' active' : '';
+    var el = document.createElement('div');
+    el.className = 'saved-item' + activeClass;
+    el.dataset.key = key;
+    el.draggable = true;
+
+    el.innerHTML =
+      '<div class="drag-handle" title="ドラッグで並び替え">⠿</div>' +
+      '<div class="saved-main" onclick="loadSaved(\'' + escapeHtml(key) + '\')">' +
+        '<div class="saved-code">' + escapeHtml(d.stockCode || '—') + '</div>' +
+        '<div class="saved-name">' + escapeHtml(d.companyName || '—') + '</div>' +
+        '<div class="saved-meta">' +
+          '<span class="saved-result ' + result + '">' + resultLabel + '</span>' +
+          '<span>' + escapeHtml(d.savedAt || '') + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<button class="del-btn" onclick="deleteSaved(event,\'' + escapeHtml(key) + '\')" title="削除">🗑</button>';
+
+    el.addEventListener('dragstart', onDragStart);
+    el.addEventListener('dragover', onSidebarDragOver);
+    el.addEventListener('dragleave', onSidebarDragLeave);
+    el.addEventListener('drop', onSidebarDrop);
+    el.addEventListener('dragend', onSidebarDragEnd);
+
+    list.appendChild(el);
+  });
+}
+
+function onDragStart(e) {
+  dragSrcKey = this.dataset.key;
+  this.style.opacity = '0.4';
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function onSidebarDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  if (this.dataset.key !== dragSrcKey) this.classList.add('drag-over');
+}
+
+function onSidebarDragLeave() {
+  this.classList.remove('drag-over');
+}
+
+function onSidebarDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  this.classList.remove('drag-over');
+
+  var targetKey = this.dataset.key;
+  if (!dragSrcKey || dragSrcKey === targetKey) return;
+
+  var si = sidebarOrder.indexOf(dragSrcKey);
+  var ti = sidebarOrder.indexOf(targetKey);
+  if (si === -1 || ti === -1) return;
+
+  sidebarOrder.splice(si, 1);
+  sidebarOrder.splice(ti, 0, dragSrcKey);
+
+  saveSidebarOrder();
+  refreshSidebar();
+}
+
+function onSidebarDragEnd() {
+  this.style.opacity = '';
+  var items = document.querySelectorAll('.saved-item');
+  items.forEach(function(el) {
+    el.classList.remove('drag-over');
+  });
+}
+
+function loadSaved(key) {
+  var records = storageGetAll();
+  var d = records[key];
+  if (!d) {
+    alert('保存データの読み込みに失敗しました');
+    return;
+  }
+
+  activeKey = key;
+  currentData = d;
+
+  closeSidebar();
+  render(d);
+  refreshSidebar();
+
+  document.getElementById('saveBtn').disabled = true;
+  document.getElementById('saveBtn').textContent = '✅ 保存済み';
+}
+
+function deleteSaved(e, key) {
+  if (e) e.stopPropagation();
+
+  showConfirm('この銘柄のデータを削除しますか？', function() {
+    var records = storageGetAll();
+    delete records[key];
+    storageSetAll(records);
+
+    if (activeKey === key) {
+      activeKey = null;
+      document.getElementById('saveBtn').disabled = false;
+      document.getElementById('saveBtn').textContent = '💾 この分析を保存';
+    }
+
+    refreshSidebar();
+  });
+}
+
+function saveResult() {
+  if (!currentData) return;
+
+  var key = activeKey;
+  if (!key) {
+    key = makeStorageKey(currentData.stockCode || 'unknown', Date.now());
+  }
+
+  currentData.savedAt = new Date().toLocaleDateString('ja-JP', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+
+  var records = storageGetAll();
+  records[key] = currentData;
+  storageSetAll(records);
+
+  activeKey = key;
+
+  document.getElementById('saveBtn').disabled = true;
+  document.getElementById('saveBtn').textContent = '✅ 保存済み';
+
+  var done = document.getElementById('saveDone');
+  done.style.display = 'inline';
+  done.textContent = '✅ 保存しました';
+  setTimeout(function() {
+    done.style.display = 'none';
+  }, 2500);
+
+  refreshSidebar();
+}
+
+function enableSaveBtn() {
+  var btn = document.getElementById('saveBtn');
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = activeKey ? '💾 変更を保存' : '💾 この分析を保存';
+  }
+  var done = document.getElementById('saveDone');
+  if (done) done.style.display = 'none';
+}
+
+/* ===== モデル切替 ===== */
+function setModel(m) {
+  currentModel = m;
+  localStorage.setItem('funda_model', m);
+
+  var sonnetBtn = document.getElementById('model-sonnet');
+  var opusBtn = document.getElementById('model-opus');
+
+  sonnetBtn.className = 'model-btn';
+  opusBtn.className = 'model-btn';
+
+  if (m === 'sonnet') {
+    sonnetBtn.classList.add('active-blue');
+  } else {
+    opusBtn.classList.add('active-gold');
+  }
+}
+
+/* ===== タブ切替 ===== */
+function switchMainTab(tab) {
+  document.getElementById('panel-analysis').style.display = tab === 'analysis' ? '' : 'none';
+  document.getElementById('panel-earnings').style.display = tab === 'earnings' ? '' : 'none';
+
+  var aBtn = document.getElementById('tab-btn-analysis');
+  var eBtn = document.getElementById('tab-btn-earnings');
+
+  aBtn.classList.remove('active');
+  eBtn.classList.remove('active');
+
+  if (tab === 'analysis') {
+    aBtn.classList.add('active');
+  } else {
+    eBtn.classList.add('active');
+    populateEarnSelect();
+  }
+}
+
+/* ===== 確認ダイアログ ===== */
+function showConfirm(msg, onOk) {
+  document.getElementById('confirmMsg').textContent = msg;
+  document.getElementById('confirmOkBtn').onclick = function() {
+    closeConfirm();
+    if (typeof onOk === 'function') onOk();
+  };
+  document.getElementById('confirmOverlay').style.display = 'flex';
+}
+
+function closeConfirm() {
+  document.getElementById('confirmOverlay').style.display = 'none';
+}
+
+/* ===== ローディング・エラーUI ===== */
+function setPhase(phase) {
+  var labels = [
+    'フェーズ1: 企業情報・財務データ取得中',
+    'フェーズ2: IR・ビジネスモデル・PL分析中',
+    '結果をまとめています...'
+  ];
+
+  for (var i = 0; i < 3; i++) {
+    var dot = document.getElementById('dot' + i);
+    dot.className = 'phase-dot' + (i < phase ? ' done' : (i === phase ? ' active' : ''));
+  }
+  document.getElementById('phaseLabel').textContent = labels[phase] || '';
+}
+
+function setMsg(msg, sub) {
+  document.getElementById('loadingMsg').textContent = msg || '';
+  document.getElementById('loadingSub').textContent = sub || '';
+}
+
+function showError(msg) {
+  document.getElementById('errorDetail').textContent = msg || '不明なエラー';
+  document.getElementById('errorBox').style.display = 'block';
+  document.getElementById('results').style.display = 'none';
+}
+
+function retryRun() {
+  document.getElementById('errorBox').style.display = 'none';
+  document.getElementById('codeInput').value = lastCode;
+  runAnalysis();
+}
+
+/* ===== ステップ開閉 ===== */
+function toggleBody(id) {
+  var body = document.getElementById('b' + id);
+  var arrow = document.getElementById('a' + id);
+  if (!body || !arrow) return;
+  body.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+/* ===== 決算タブ選択肢 ===== */
+function setUseType(type) {
+  earnUseType = type;
+  document.getElementById('utype-hold').className = 'use-type-btn' + (type === 'hold' ? ' on' : '');
+  document.getElementById('utype-new').className = 'use-type-btn' + (type === 'new' ? ' on' : '');
+}
+
+function populateEarnSelect() {
+  var records = storageGetAll();
+  var sel = document.getElementById('earnStockSelect');
+  var keys = Object.keys(records).sort().reverse();
+
+  sel.innerHTML = '<option value="">── 選択なし（差分比較なし）──</option>';
+
+  keys.forEach(function(k) {
+    var d = records[k];
+    if (!d) return;
+    sel.innerHTML +=
+      '<option value="' + escapeHtml(k) + '">' +
+      escapeHtml((d.stockCode || '') + ' ' + (d.companyName || '') + '（' + (d.savedAt || '') + '）') +
+      '</option>';
+  });
+}
+
+function onEarnStockSelect() {
+  var key = document.getElementById('earnStockSelect').value;
+  if (!key) return;
+
+  var records = storageGetAll();
+  var d = records[key];
+  if (!d) return;
+
+  if (d.stockCode) document.getElementById('earnCode').value = d.stockCode;
+  if (d.companyName) document.getElementById('earnName').value = d.companyName;
+}
+
+/* ===== API設定（安全接続用の受け口だけ先に用意） ===== */
+var APP_CONFIG = {
+  analysisMode: localStorage.getItem('funda_analysis_mode') || 'demo', // demo | backend
+  backendAnalyzeUrl: localStorage.getItem('funda_backend_analyze_url') || '',
+  backendEarningsUrl: localStorage.getItem('funda_backend_earnings_url') || ''
+};
+
+function setAnalysisMode(mode) {
+  APP_CONFIG.analysisMode = mode;
+  localStorage.setItem('funda_analysis_mode', mode);
+}
+
+function setBackendUrls(analyzeUrl, earningsUrl) {
+  if (typeof analyzeUrl === 'string') {
+    APP_CONFIG.backendAnalyzeUrl = analyzeUrl.trim();
+    localStorage.setItem('funda_backend_analyze_url', APP_CONFIG.backendAnalyzeUrl);
+  }
+  if (typeof earningsUrl === 'string') {
+    APP_CONFIG.backendEarningsUrl = earningsUrl.trim();
+    localStorage.setItem('funda_backend_earnings_url', APP_CONFIG.backendEarningsUrl);
+  }
+}
+
+/* ===== 判定対象指標 ===== */
+var METADEFS = [
+  {
+    l: 'PER',
+    k: 'per',
+    bench: function(v) {
+      var n = parseFloat(String(v || '').replace(/[^\d.\-]/g, ''));
+      if (isNaN(n)) return null;
+      if (n < 15) return { t: '割安目安: 15倍以下', c: 'good' };
+      if (n < 25) return { t: '標準: 15〜25倍', c: 'warn' };
+      return { t: '割高注意: 25倍超', c: 'bad' };
+    }
+  },
+  {
+    l: 'PBR',
+    k: 'pbr',
+    bench: function(v) {
+      var n = parseFloat(String(v || '').replace(/[^\d.\-]/g, ''));
+      if (isNaN(n)) return null;
+      if (n < 1) return { t: '解散価値以下: 1倍未満', c: 'good' };
+      if (n < 2) return { t: '標準: 1〜2倍', c: 'warn' };
+      return { t: '割高注意: 2倍超', c: 'bad' };
+    }
+  },
+  {
+    l: '配当利回り',
+    k: 'dividendYield',
+    bench: function(v) {
+      var n = parseFloat(String(v || '').replace(/[^\d.\-]/g, ''));
+      if (isNaN(n)) return null;
+      if (n >= 3.5) return { t: '高配当: 3.5%以上', c: 'good' };
+      if (n >= 2.5) return { t: '合格: 2.5〜3.5%', c: 'warn' };
+      return { t: '基準未満: 2.5%未満', c: 'bad' };
+    }
+  },
+  {
+    l: 'ROE',
+    k: 'roe',
+    bench: function(v) {
+      var n = parseFloat(String(v || '').replace(/[^\d.\-]/g, ''));
+      if (isNaN(n)) return null;
+      if (n >= 15) return { t: '優秀: 15%以上', c: 'good' };
+      if (n >= 10) return { t: '合格: 10〜15%', c: 'warn' };
+      return { t: '要注意: 10%未満', c: 'bad' };
+    }
+  },
+  {
+    l: 'EPS',
+    k: 'eps',
+    bench: function() {
+      return { t: '増加傾向が重要', c: '' };
+    }
+  },
+  {
+    l: '時価総額',
+    k: 'marketCap',
+    bench: function() {
+      return { t: '参考値', c: '' };
+    }
+  }
+];
+
+function calcOverall(steps) {
+  var hasFail = false;
+  var hasWarn = false;
+
+  (steps || []).forEach(function(step) {
+    if (!step) return;
+
+    if (step.result === 'fail') hasFail = true;
+    if (step.result === 'exception' || step.result === 'warn') hasWarn = true;
+
+    if (step.subItems && Array.isArray(step.subItems)) {
+      step.subItems.forEach(function(sub) {
+        if (!sub) return;
+        if (sub.result === 'fail') hasFail = true;
+        if (sub.result === 'warn') hasWarn = true;
+      });
+    }
+  });
+
+  if (hasFail) return 'fail';
+  if (hasWarn) return 'review';
+  return 'pass';
+}
+
+/* ===== ダミー分析データ ===== */
+function buildDummyAnalysisData(code) {
+  var companyMap = {
+    '7203': { name: 'トヨタ自動車', market: '東証プライム', sector: '輸送用機器', price: '3,420円' },
+    '8306': { name: '三菱UFJフィナンシャル・グループ', market: '東証プライム', sector: '銀行業', price: '1,865円' },
+    '9432': { name: '日本電信電話', market: '東証プライム', sector: '情報・通信業', price: '182円' },
+    '8058': { name: '三菱商事', market: '東証プライム', sector: '卸売業', price: '3,128円' },
+    '4063': { name: '信越化学工業', market: '東証プライム', sector: '化学', price: '5,980円' },
+    '2914': { name: '日本たばこ産業', market: '東証プライム', sector: '食料品', price: '4,115円' }
+  };
+
+  var base = companyMap[code] || {
+    name: 'サンプル企業',
+    market: '東証プライム',
+    sector: '未分類',
+    price: '1,234円'
+  };
+
+  var steps = [
+    {
+      id: 1,
+      name: '配当利回り',
+      criterion: '2.5%以上',
+      value: code === '9432' ? '2.1%' : '3.4%',
+      result: code === '9432' ? 'fail' : 'pass',
+      detail: code === '9432'
+        ? '予想配当利回りは 2.1% で、基準の 2.5% を下回っています。高配当投資対象としてはやや物足りません。'
+        : '予想配当利回りは 3.4% で、基準を上回っています。高配当候補として十分に検討可能な水準です。',
+      isException: false,
+      exceptionReason: '',
+      sources: [
+        { title: 'ダミー: 指標サマリー', url: '' }
+      ]
+    },
+    {
+      id: 2,
+      name: '配当推移',
+      criterion: '減配1回以下 / 5年1.5倍以上',
+      value: '減配0回 / 1.7倍',
+      result: 'pass',
+      detail: '過去数年の配当は概ね右肩上がりで、株主還元方針に大きなブレは見られません。累進配当傾向として評価できます。',
+      isException: false,
+      exceptionReason: '',
+      sources: []
+    },
+    {
+      id: 3,
+      name: '売上・営業利益推移',
+      criterion: '5年増加傾向',
+      value: '売上 +18% / 営業利益 +22%',
+      result: 'pass',
+      detail: '短期の増減はあるものの、中期で見ると売上・営業利益とも増加傾向です。主力事業の競争力は比較的高いと考えられます。',
+      isException: false,
+      exceptionReason: '',
+      sources: []
+    },
+    {
+      id: 4,
+      name: '株主資本推移',
+      criterion: '増加傾向',
+      value: '3.2兆 → 4.1兆',
+      result: 'pass',
+      detail: '利益剰余金の積み上がりを背景に、株主資本は長期で増加しています。財務基盤は安定的です。',
+      isException: false,
+      exceptionReason: '',
+      sources: []
+    },
+    {
+      id: 5,
+      name: '自己資本比率',
+      criterion: '40%以上',
+      value: code === '8306' ? '18.4%' : '43.8%',
+      result: code === '8306' ? 'exception' : 'pass',
+      detail: code === '8306'
+        ? '銀行業は一般事業会社と財務構造が異なるため、自己資本比率の単純比較は適しません。業種特性を踏まえて判断が必要です。'
+        : '自己資本比率は 43.8% と基準を上回っており、財務健全性は良好です。',
+      isException: code === '8306',
+      exceptionReason: code === '8306' ? '銀行業のため例外判定' : '',
+      sources: []
+    },
+    {
+      id: 6,
+      name: 'キャッシュフロー',
+      criterion: '営業+/投資-/財務-',
+      value: '営業 +8200億 / 投資 -3500億 / 財務 -1800億',
+      result: 'pass',
+      detail: '本業で稼いだ資金を成長投資と株主還元に振り向ける理想的なCF構成に近く、質の高いキャッシュ創出ができています。',
+      isException: false,
+      exceptionReason: '',
+      sources: []
+    },
+    {
+      id: 7,
+      name: 'IR・配当方針',
+      criterion: '株主還元意識',
+      value: '合格',
+      result: 'pass',
+      detail: '安定配当や累進配当を意識した説明があり、株主還元への姿勢は比較的明確です。DOE・配当性向・総還元性向などの言及も好印象です。',
+      tokimeki: true,
+      isException: false,
+      exceptionReason: '',
+      sources: []
+    },
+    {
+      id: 8,
+      name: 'ビジネスモデル妄想タイム',
+      criterion: '1時間',
+      value: '妄想準備完了',
+      result: 'info',
+      detail: '主力事業は高シェア領域を持ち、ブランド・顧客基盤・スケールメリットを背景に競争優位を築いています。景気循環や市況変動の影響を受ける局面はあるものの、価格転嫁力や収益源の多様性があれば、中期的な利益成長余地は大きいと考えられます。利益率がどこで決まるのか、固定費の重さはどれくらいか、再投資余地はあるかを想像しながら読むと理解が深まります。',
+      isException: false,
+      exceptionReason: '',
+      sources: []
+    },
+    {
+      id: 9,
+      name: 'PL深掘り分析',
+      criterion: '3期以上の決算',
+      value: '8項目確認',
+      result: 'pass',
+      detail: '利益率は大きく崩れておらず、販管費の増加も一定範囲に収まっています。特別損益への依存も限定的で、利益の質は比較的良好です。',
+      isException: false,
+      exceptionReason: '',
+      subItems: [
+        { name: '売上トレンド(3期以上)', check: '増収の継続性', result: 'pass', note: '中期では増収基調' },
+        { name: '売上増減の要因', check: '外部要因・一時的か', result: 'pass', note: '本業寄与の比重が大きい' },
+        { name: '変動費の動向', check: '上昇要因と改善余地', result: 'warn', note: '原材料高の影響を受けやすい' },
+        { name: '固定費の動向', check: '増員orベア・売上で吸収できるか', result: 'pass', note: '増加あるが吸収可能' },
+        { name: '特別損益・利益の質', check: '償却前経常利益で判断', result: 'pass', note: '利益の質は概ね良好' },
+        { name: '返済期間', check: '長短借入金÷償却前経常利益<20年', result: 'pass', note: '約6.2年' },
+        { name: '配当性向', check: '50%以下目安', result: 'pass', note: '約32%' },
+        { name: '固定資産減価償却リスク', check: '償却済資産の補修建替えリスク', result: 'warn', note: '大型更新投資の確認余地あり' }
+      ],
+      sources: []
+    }
+  ];
+
+  var overallResult = calcOverall(steps);
+
+  var finalComment =
+    overallResult === 'pass'
+      ? '主要項目は概ね良好で、スクリーニング通過候補として検討しやすい状態です。'
+      : overallResult === 'fail'
+      ? '重要項目に未達があり、現時点では慎重に判断した方がよい状態です。'
+      : '一部に注意点や例外判定があるため、追加確認を前提に検討するのが無難です。';
+
+  return {
+    companyName: base.name,
+    stockCode: code,
+    market: base.market,
+    sector: base.sector,
+    currentPrice: base.price,
+    analysisDate: new Date().toLocaleDateString('ja-JP'),
+    nextEarnings: '2026年5月中旬',
+    metrics: {
+      per: code === '9432' ? '13.8倍' : '11.8倍',
+      pbr: code === '8306' ? '0.92倍' : '1.14倍',
+      dividendYield: code === '9432' ? '2.1%' : '3.4%',
+      roe: code === '8306' ? '8.4%' : '10.6%',
+      eps: '241円',
+      marketCap: code === '7203' ? '54兆円' : '8.2兆円',
+      sources: []
+    },
+    steps: steps,
+    overallResult: overallResult,
+    finalComment: finalComment
+  };
+}
+
+/* ===== バックエンド接続用関数（キーはここに書かない） ===== */
+async function analyzeWithBackend(code) {
+  if (!APP_CONFIG.backendAnalyzeUrl) {
+    throw new Error('バックエンドURLが未設定です。先に setBackendUrls() で analyze URL を設定してください。');
+  }
+
+  var res = await fetch(APP_CONFIG.backendAnalyzeUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      stockCode: code,
+      model: currentModel
+    })
+  });
+
+  var data = await res.json();
+
+  if (!res.ok) {
+    throw new Error((data && data.error) || 'バックエンド分析に失敗しました');
+  }
+
+  if (!data || !data.result) {
+    throw new Error('バックエンド応答が不正です');
+  }
+
+  return data.result;
+}
+
+/* ===== 分析実行 ===== */
+async function runAnalysis() {
+  var code = document.getElementById('codeInput').value.trim();
+  if (!code) {
+    alert('証券コードを入力してください');
+    return;
+  }
+
+  lastCode = code;
+  currentData = null;
+  activeKey = null;
+
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('errorBox').style.display = 'none';
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('saveBtn').disabled = false;
+  document.getElementById('saveBtn').textContent = '💾 この分析を保存';
+  document.getElementById('saveDone').style.display = 'none';
+
+  try {
+    setPhase(0);
+    setMsg('財務データを取得中...', 'STEP 1〜6 を分析しています（' + MODELS[currentModel] + '）');
+
+    var result;
+
+    if (APP_CONFIG.analysisMode === 'backend') {
+      setPhase(1);
+      setMsg('バックエンド経由で分析中...', '安全なAPI接続を使用しています');
+      result = await analyzeWithBackend(code);
+    } else {
+      await fakeDelay(550);
+      setPhase(1);
+      setMsg('IR・ビジネスモデルを分析中...', 'STEP 7〜9 を分析しています');
+      await fakeDelay(650);
+      setPhase(2);
+      setMsg('結果をまとめています...', 'ダミーデータで描画しています');
+      await fakeDelay(350);
+      result = buildDummyAnalysisData(code);
+    }
+
+    result.overallResult = result.overallResult || calcOverall(result.steps || []);
+    currentData = result;
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('analyzeBtn').disabled = false;
+
+    render(result);
+  } catch (e) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('analyzeBtn').disabled = false;
+    showError('【使用モード: ' + APP_CONFIG.analysisMode + '】\n' + (e.message || e));
+  }
+}
+
+function fakeDelay(ms) {
+  return new Promise(function(resolve) {
+    setTimeout(resolve, ms);
+  });
+}
+
+/* ===== 指標描画 ===== */
+function renderMetrics(metrics) {
+  metrics = metrics || {};
+  var row = document.getElementById('metricsRow');
+
+  row.innerHTML = METADEFS.map(function(def) {
+    var val = metrics[def.k] || '—';
+    var b = def.bench ? def.bench(val) : null;
+    var benchHtml = b
+      ? '<div class="metric-bench ' + (b.c || '') + '">' + escapeHtml(b.t) + '</div>'
+      : '';
+
+    return '' +
+      '<div class="metric-card">' +
+        '<div class="metric-label">' + escapeHtml(def.l) + '</div>' +
+        '<div class="metric-value">' + escapeHtml(val) + '</div>' +
+        benchHtml +
+      '</div>';
+  }).join('');
+
+  var srcEl = document.getElementById('metricsSources');
+  var validSources = (metrics.sources || []).filter(function(s) {
+    return s && s.url && s.url.indexOf('http') === 0;
+  });
+
+  if (validSources.length) {
+    srcEl.innerHTML =
+      '<span style="font-size:11px;color:#6e7681;">指標参照元: </span>' +
+      validSources.map(function(s) {
+        return '<a class="source-link" href="' + escapeHtml(s.url) + '" target="_blank" rel="noopener">🔗 ' + escapeHtml(s.title || '参照元') + '</a>';
+      }).join('');
+    srcEl.style.display = 'block';
+  } else {
+    srcEl.innerHTML = '';
+    srcEl.style.display = 'none';
+  }
+}
+
+/* ===== 決算予定表示 ===== */
+function parseEarningsDate(str) {
+  if (!str) return null;
+
+  var s = String(str);
+  var m;
+
+  m = s.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+
+  m = s.match(/(\d{4})年(\d{1,2})月(上旬|中旬|下旬)?/);
+  if (m) {
+    var day = m[3] === '下旬' ? 25 : m[3] === '中旬' ? 15 : 5;
+    return new Date(+m[1], +m[2] - 1, day);
+  }
+
+  return null;
+}
+
+function renderEarningsBadge(nextEarnings) {
+  var el = document.getElementById('earningsBadge');
+  if (!el) return;
+
+  if (!nextEarnings) {
+    el.innerHTML = '';
+    return;
+  }
+
+  var now = new Date();
+  var warningMs = 21 * 24 * 60 * 60 * 1000;
+  var earnDate = parseEarningsDate(nextEarnings);
+  var isClose = earnDate && (earnDate - now) >= 0 && (earnDate - now) <= warningMs;
+
+  el.innerHTML =
+    '<div class="earnings-badge ' + (isClose ? 'warn' : 'ok') + '">' +
+      '📅 次回決算: ' + escapeHtml(nextEarnings) + (isClose ? ' ⚠ 3週間以内' : '') +
+    '</div>';
+}
+
+/* ===== ステップ描画 ===== */
+function buildPlaceholder(id, name) {
+  return '' +
+    '<div class="step-card loading-card">' +
+      '<div class="step-header">' +
+        '<div class="step-num">' + id + '</div>' +
+        '<div class="step-info">' +
+          '<div class="step-name">' + escapeHtml(name) + '</div>' +
+          '<div class="step-crit">分析中...</div>' +
+        '</div>' +
+        '<div class="step-val" style="color:#6e7681">⏳</div>' +
+      '</div>' +
+    '</div>';
+}
+
+function buildStepHtml(step) {
+  var EMOJI = { pass: '✅', fail: '❌', exception: '⚠️', info: '💭', warn: '⚠️' };
+  var SUBBADGE = { pass: '✅', fail: '❌', warn: '⚠️' };
+
+  var isTokimeki = step.result === 'pass' && step.tokimeki;
+  var cls = isTokimeki ? 'tokimeki' : (step.result || 'info');
+  if (cls === 'warn') cls = 'exception';
+
+  var badge = isTokimeki ? '<span class="heart">💕</span>' : (EMOJI[step.result] || '⬜');
+  var body = '';
+
+  if (isTokimeki) {
+    body =
+      '<div class="tokimeki-box">' +
+        '<div class="tokimeki-title"><span class="heart">💕</span> ときめきポイント発見！</div>' +
+        '<div class="tokimeki-text">' + escapeHtml(step.detail || '—') + '</div>' +
+      '</div>';
+  } else if (step.id === 8) {
+    body =
+      '<div class="biz-box">' + escapeHtml(step.detail || '—') + '</div>' +
+      '<div class="dream-bar">⏱ 推奨妄想時間: 1時間　🧠 競合優位性・収益構造・成長ドライバーを思う存分妄想しましょう</div>';
+  } else if (step.id === 9 && step.subItems) {
+    var subHtml = step.subItems.map(function(sub) {
+      return '' +
+        '<div class="sub-item ' + (sub.result || 'warn') + '">' +
+          '<span class="sub-badge">' + (SUBBADGE[sub.result] || '⬜') + '</span>' +
+          '<div class="sub-content">' +
+            '<div class="sub-name">' + escapeHtml(sub.name || '') + '</div>' +
+            '<div class="sub-check">判定基準: ' + escapeHtml(sub.check || '') + '</div>' +
+            '<div class="sub-note">' + escapeHtml(sub.note || '—') + '</div>' +
+          '</div>' +
+        '</div>';
+    }).join('');
+
+    body =
+      '<p style="margin-bottom:8px;color:#8b949e;font-size:13px;">' + escapeHtml(step.detail || '') + '</p>' +
+      '<div class="sub-list">' + subHtml + '</div>';
+  } else {
+    body = '<p>' + escapeHtml(step.detail || '—') + '</p>';
+    if (step.isException && step.exceptionReason) {
+      body += '<div class="exc-note">⚠️ 例外適用: ' + escapeHtml(step.exceptionReason) + '</div>';
+    }
+  }
+
+  if (step.sources && step.sources.length) {
+    var links = step.sources
+      .filter(function(src) { return src.url && src.url.indexOf('http') === 0; })
+      .map(function(src) {
+        return '<a class="source-link" href="' + escapeHtml(src.url) + '" target="_blank" rel="noopener">🔗 ' + escapeHtml(src.title || '参照元') + '</a>';
+      })
+      .join('');
+
+    if (links) {
+      body +=
+        '<div class="sources-box">' +
+          '<div class="sources-label">参照ソース</div>' +
+          links +
+        '</div>';
+    }
+  }
+
+  return '' +
+    '<div class="step-card ' + cls + '">' +
+      '<div class="step-header" onclick="toggleBody(' + step.id + ')">' +
+        '<div class="step-num">' + step.id + '</div>' +
+        '<div class="step-info">' +
+          '<div class="step-name">' + escapeHtml(step.name || '') + '</div>' +
+          '<div class="step-crit">' + escapeHtml(step.criterion || '') + '</div>' +
+        '</div>' +
+        '<div class="step-val">' + escapeHtml(step.value || '—') + '</div>' +
+        '<span class="step-badge">' + badge + '</span>' +
+        '<span class="step-arrow open" id="a' + step.id + '">▶</span>' +
+      '</div>' +
+      '<div class="step-body open" id="b' + step.id + '">' + body + '</div>' +
+    '</div>';
+}
+
+/* ===== 結果描画 ===== */
+function renderPartial(data) {
+  try {
+    document.getElementById('cName').textContent = (data.companyName || '—') + '（' + (data.stockCode || '—') + '）';
+    document.getElementById('cSub').textContent = [
+      data.market,
+      data.sector,
+      data.currentPrice,
+      '分析日: ' + (data.analysisDate || '')
+    ].filter(Boolean).join(' ｜ ');
+
+    renderEarningsBadge(data.nextEarnings);
+    renderMetrics(data.metrics || {});
+
+    var html = (data.steps || []).map(function(step) {
+      return buildStepHtml(step);
+    }).join('');
+
+    if (!html) {
+      html += buildPlaceholder(1, '配当利回り');
+      html += buildPlaceholder(2, '配当推移');
+      html += buildPlaceholder(3, '売上・営業利益推移');
+      html += buildPlaceholder(4, '株主資本推移');
+      html += buildPlaceholder(5, '自己資本比率');
+      html += buildPlaceholder(6, 'キャッシュフロー');
+      html += buildPlaceholder(7, 'IR・配当方針');
+      html += buildPlaceholder(8, 'ビジネスモデル妄想タイム');
+      html += buildPlaceholder(9, 'PL深掘り分析');
+    }
+
+    document.getElementById('flowHint').innerHTML = '';
+    document.getElementById('stepsWrap').innerHTML = html;
+    document.getElementById('overall').className = 'overall';
+    document.getElementById('overall').innerHTML = '';
+    document.getElementById('results').style.display = 'block';
+  } catch (e) {
+    console.error('renderPartial error:', e);
+    document.getElementById('results').style.display = 'block';
+  }
+}
+
+function render(data, noScroll) {
+  try {
+    document.getElementById('cName').textContent = (data.companyName || '—') + '（' + (data.stockCode || '—') + '）';
+    document.getElementById('cSub').textContent = [
+      data.market,
+      data.sector,
+      data.currentPrice,
+      '分析日: ' + (data.analysisDate || '')
+    ].filter(Boolean).join(' ｜ ');
+
+    renderEarningsBadge(data.nextEarnings);
+    renderMetrics(data.metrics || {});
+
+    var steps = data.steps || [];
+
+    document.getElementById('flowHint').innerHTML = steps.map(function(step, i) {
+      var b = step.result === 'pass'
+        ? '✅'
+        : step.result === 'fail'
+        ? '❌'
+        : step.result === 'exception'
+        ? '⚠️'
+        : step.result === 'info'
+        ? '💭'
+        : '⚠️';
+
+      return '<span class="flow-tag">' + b + ' ' + step.id + '</span>' + (i < steps.length - 1 ? ' → ' : '');
+    }).join('');
+
+    document.getElementById('stepsWrap').innerHTML = steps.map(function(step) {
+      return buildStepHtml(step);
+    }).join('');
+
+    var overallMap = {
+      pass: { t: '✅ 総合判定：スクリーニング通過！', c: 'pass' },
+      fail: { t: '❌ 総合判定：スクリーニング未通過', c: 'fail' },
+      review: { t: '⚠️ 総合判定：要検討（個別確認が必要な項目あり）', c: 'review' }
+    };
+
+    var ov = overallMap[data.overallResult] || overallMap.review;
+    var overallEl = document.getElementById('overall');
+    overallEl.className = 'overall ' + ov.c;
+    overallEl.innerHTML =
+      '<div class="overall-title">' + ov.t + '</div>' +
+      (data.finalComment ? '<div class="overall-comment">' + escapeHtml(data.finalComment) + '</div>' : '');
+
+    document.getElementById('results').style.display = 'block';
+
+    if (!noScroll) {
+      document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+    }
+  } catch (e) {
+    console.error('render error:', e);
+    document.getElementById('results').style.display = 'block';
+  }
+}
+
+/* ===== PDFアップロード ===== */
+function onDragOver(e) {
+  e.preventDefault();
+  document.getElementById('uploadArea').classList.add('drag');
+}
+
+function onDragLeave() {
+  document.getElementById('uploadArea').classList.remove('drag');
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadArea').classList.remove('drag');
+  addFiles(Array.from(e.dataTransfer.files || []));
+}
+
+function onFileSelect(e) {
+  addFiles(Array.from(e.target.files || []));
+  e.target.value = '';
+}
+
+function addFiles(files) {
+  files.forEach(function(file) {
+    if (file.type !== 'application/pdf') {
+      alert(file.name + ' はPDFではありません');
+      return;
+    }
+    if (earnFiles.length >= 2) {
+      alert('アップロードは最大2ファイルです');
+      return;
+    }
+    if (earnFiles.some(function(x) { return x.name === file.name && x.size === file.size; })) {
+      return;
+    }
+    earnFiles.push(file);
+  });
+  renderFileList();
+}
+
+function removeFile(idx) {
+  earnFiles.splice(idx, 1);
+  renderFileList();
+}
+
+function renderFileList() {
+  var el = document.getElementById('fileList');
+  el.innerHTML = '';
+
+  earnFiles.forEach(function(file, i) {
+    var kb = Math.round(file.size / 1024);
+    el.innerHTML += '' +
+      '<div class="file-item">' +
+        '<div class="file-ico">📄</div>' +
+        '<div class="file-name">' + escapeHtml(file.name) + '</div>' +
+        '<div class="file-size">' + kb + 'KB</div>' +
+        '<button class="file-del" onclick="removeFile(' + i + ')">✕</button>' +
+      '</div>';
+  });
+}
+
+/* ===== 決算分析ダミーデータ ===== */
+function buildDummyEarningsResult(input) {
+  var isHold = input.useType === 'hold';
+  var stockCode = input.stockCode || '';
+  var companyName = input.companyName || (stockCode === '7203' ? 'トヨタ自動車' : 'サンプル企業');
+
+  return {
+    stockCode: stockCode,
+    companyName: companyName,
+    fiscalPeriod: '3Q',
+    settlementDate: new Date().toLocaleDateString('ja-JP'),
+    revenue: {
+      actual: '2兆4,800億円',
+      forecast: '3兆2,000億円',
+      progressRate: '77.5%',
+      yoyChange: '+8.2%',
+      result: 'pass',
+      note: '順調な進捗'
+    },
+    operatingProfit: {
+      actual: '3,180億円',
+      forecast: '4,500億円',
+      progressRate: '70.7%',
+      yoyChange: '+5.4%',
+      result: 'watch',
+      note: 'やや慎重に確認'
+    },
+    guidance: {
+      change: '据え置き',
+      newForecast: '通期予想変更なし',
+      result: 'watch',
+      note: '上方修正なし'
+    },
+    dividend: {
+      change: '維持',
+      newAmount: '年間配当 90円予想',
+      note: '株主還元方針に大きな変化なし'
+    },
+    qualityNote: '特別損益の寄与は限定的で、本業ベースの収益力は概ね維持されています。',
+    diffFromPast: input.pastData ? [
+      { item: '売上進捗', before: '74.1%', after: '77.5%', direction: 'up' },
+      { item: '営業利益進捗', before: '72.5%', after: '70.7%', direction: 'down' },
+      { item: 'ガイダンス', before: '据え置き', after: '据え置き', direction: 'neutral' }
+    ] : [],
+    verdict: isHold ? '保有継続' : '条件付き検討',
+    verdictReason: isHold
+      ? '売上進捗は良好で配当方針も安定しています。利益進捗はやや慎重に見る必要がありますが、現時点で即売却を要する内容ではありません。'
+      : '売上成長は確認できる一方、利益進捗やガイダンスに強い上振れは見られません。次回決算や進捗改善を確認した上での検討が無難です。',
+    nextAction: isHold
+      ? '次回決算まで継続保有し、営業利益率の推移を確認する'
+      : '次回決算またはガイダンス修正の有無を待って再判定する',
+    summary: '全体として売上は堅調ですが、利益面はやや慎重な見方が必要です。大崩れではないものの、強気一辺倒では判断しづらい内容です。'
+  };
+}
+
+async function analyzeEarningsWithBackend(payload) {
+  if (!APP_CONFIG.backendEarningsUrl) {
+    throw new Error('バックエンドURLが未設定です。先に setBackendUrls() で earnings URL を設定してください。');
+  }
+
+  var formData = new FormData();
+  formData.append('stockCode', payload.stockCode || '');
+  formData.append('companyName', payload.companyName || '');
+  formData.append('useType', payload.useType || 'hold');
+  formData.append('model', currentModel);
+
+  if (payload.pastData) {
+    formData.append('pastData', JSON.stringify(payload.pastData));
+  }
+
+  (payload.files || []).forEach(function(file, i) {
+    formData.append('file' + i, file);
+  });
+
+  var res = await fetch(APP_CONFIG.backendEarningsUrl, {
+    method: 'POST',
+    body: formData
+  });
+
+  var data = await res.json();
+
+  if (!res.ok) {
+    throw new Error((data && data.error) || 'バックエンド決算分析に失敗しました');
+  }
+
+  if (!data || !data.result) {
+    throw new Error('バックエンド応答が不正です');
+  }
+
+  return data.result;
+}
+
+/* ===== 決算分析実行 ===== */
+async function runEarningsAnalysis() {
+  if (earnFiles.length === 0) {
+    document.getElementById('earnErr').textContent = 'PDFファイルを1つ以上アップロードしてください';
+    document.getElementById('earnErr').classList.add('on');
+    return;
+  }
+
+  document.getElementById('earnErr').classList.remove('on');
+
+  var stockCode = document.getElementById('earnCode').value.trim();
+  var companyName = document.getElementById('earnName').value.trim();
+  var selectedKey = document.getElementById('earnStockSelect').value;
+
+  var pastData = null;
+  if (selectedKey) {
+    var records = storageGetAll();
+    pastData = records[selectedKey] || null;
+  }
+
+  var btn = document.getElementById('earnRunBtn');
+  var sp = document.getElementById('earnSp');
+  var txt = document.getElementById('earnRunTxt');
+
+  btn.disabled = true;
+  sp.style.display = 'block';
+  txt.textContent = '分析中...';
+  document.getElementById('earnResults').style.display = 'none';
+
+  try {
+    var result;
+
+    if (APP_CONFIG.analysisMode === 'backend') {
+      result = await analyzeEarningsWithBackend({
+        stockCode: stockCode,
+        companyName: companyName,
+        useType: earnUseType,
+        pastData: pastData,
+        files: earnFiles
+      });
+    } else {
+      await fakeDelay(900);
+      result = buildDummyEarningsResult({
+        stockCode: stockCode,
+        companyName: companyName,
+        useType: earnUseType,
+        pastData: pastData,
+        files: earnFiles
+      });
+    }
+
+    renderEarningsResult(result, pastData);
+  } catch (e) {
+    document.getElementById('earnErr').textContent = 'エラー: ' + (e.message || e);
+    document.getElementById('earnErr').classList.add('on');
+  } finally {
+    btn.disabled = false;
+    sp.style.display = 'none';
+    txt.textContent = '🤖 決算を分析する';
+  }
+}
+
+/* ===== 決算結果描画 ===== */
+function renderEarningsResult(r, pastData) {
+  var verdictMap = {
+    '保有継続': { cls: 'hold', ico: '✅', lbl: '保有継続' },
+    '一部利確検討': { cls: 'partial', ico: '⚠️', lbl: '一部利確検討' },
+    '撤退検討': { cls: 'exit', ico: '🚨', lbl: '撤退検討' },
+    '新規候補として有望': { cls: 'newbuy', ico: '⭐', lbl: '新規候補として有望' },
+    '条件付き検討': { cls: 'partial', ico: '🟡', lbl: '条件付き検討' },
+    '見送り': { cls: 'exit', ico: '❌', lbl: '見送り' }
+  };
+
+  var vd = verdictMap[r.verdict] || {
+    cls: 'partial',
+    ico: '📋',
+    lbl: r.verdict || '判定中'
+  };
+
+  function kpiCard(label, kpi) {
+    if (!kpi) return '';
+
+    var cls = kpi.result === 'pass' ? 'pass' : kpi.result === 'fail' ? 'fail' : 'watch';
+    var icon = kpi.result === 'pass' ? '✅' : kpi.result === 'fail' ? '❌' : '⚠️';
+
+    return '' +
+      '<div class="earn-kpi ' + cls + '">' +
+        '<div class="earn-kpi-badge">' + icon + ' ' +
+          (kpi.result === 'pass' ? '良好' : kpi.result === 'fail' ? '要注意' : '注視') +
+        '</div>' +
+        '<div class="earn-kpi-label">' + escapeHtml(label) + '</div>' +
+        '<div class="earn-kpi-val">' + escapeHtml(kpi.progressRate || kpi.change || '—') + '</div>' +
+        '<div class="earn-kpi-sub">' +
+          (kpi.actual ? '実績: ' + escapeHtml(kpi.actual) + '<br>' : '') +
+          (kpi.forecast ? '通期予想: ' + escapeHtml(kpi.forecast) + '<br>' : '') +
+          (kpi.yoyChange ? '前年同期比: ' + escapeHtml(kpi.yoyChange) + '<br>' : '') +
+          (kpi.newForecast ? '修正後: ' + escapeHtml(kpi.newForecast) + '<br>' : '') +
+          escapeHtml(kpi.note || '') +
+        '</div>' +
+      '</div>';
+  }
+
+  var diffHtml = '';
+  if (r.diffFromPast && r.diffFromPast.length > 0 && pastData) {
+    diffHtml = '' +
+      '<div class="earn-section" style="margin-bottom:14px">' +
+        '<div class="earn-sec-h">' +
+          '<div class="earn-sec-ico" style="background:rgba(245,166,35,.12)">📊</div>' +
+          '<div class="earn-sec-ttl">前回分析との差分</div>' +
+        '</div>' +
+        '<div style="padding:12px 16px">' +
+          '<table class="diff-table">' +
+            '<thead>' +
+              '<tr><th>項目</th><th>前回</th><th>今回</th><th>変化</th></tr>' +
+            '</thead>' +
+            '<tbody>' +
+              r.diffFromPast.map(function(d) {
+                var dir = d.direction === 'up'
+                  ? '<span class="diff-up">↑ 改善</span>'
+                  : d.direction === 'down'
+                  ? '<span class="diff-down">↓ 悪化</span>'
+                  : '<span class="diff-neutral">→ 変化なし</span>';
+
+                return '' +
+                  '<tr>' +
+                    '<td>' + escapeHtml(d.item || '—') + '</td>' +
+                    '<td style="color:#8b949e">' + escapeHtml(d.before || '—') + '</td>' +
+                    '<td>' + escapeHtml(d.after || '—') + '</td>' +
+                    '<td>' + dir + '</td>' +
+                  '</tr>';
+              }).join('') +
+            '</tbody>' +
+          '</table>' +
+        '</div>' +
+      '</div>';
+  }
+
+  var html = '' +
+    '<div style="background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px 16px;margin-bottom:14px">' +
+      '<div style="font-size:12px;color:#8b949e;margin-bottom:4px">' +
+        escapeHtml((r.companyName || '') + ' ' + (r.stockCode || '') + '　' + (r.fiscalPeriod || '') + '　' + (r.settlementDate || '')) +
+      '</div>' +
+      '<div style="font-size:13px;color:#c9d1d9;line-height:1.7">' + escapeHtml(r.summary || '') + '</div>' +
+      (r.qualityNote
+        ? '<div style="font-size:12px;color:#8b949e;margin-top:6px;padding:6px 10px;background:#21262d;border-radius:6px">📎 利益の質: ' + escapeHtml(r.qualityNote) + '</div>'
+        : '') +
+    '</div>' +
+
+    '<div class="earn-kpi-grid">' +
+      kpiCard('売上高進捗', r.revenue) +
+      kpiCard('営業利益進捗', r.operatingProfit) +
+      kpiCard('ガイダンス', r.guidance) +
+      (r.dividend
+        ? '<div class="earn-kpi ' + (r.dividend.change === '増配' ? 'pass' : r.dividend.change === '減配' ? 'fail' : 'watch') + '">' +
+            '<div class="earn-kpi-label">配当</div>' +
+            '<div class="earn-kpi-val">' + escapeHtml(r.dividend.change || '—') + '</div>' +
+            '<div class="earn-kpi-sub">' + escapeHtml((r.dividend.newAmount || '') + ' ' + (r.dividend.note || '')) + '</div>' +
+          '</div>'
+        : '') +
+    '</div>' +
+
+    diffHtml +
+
+    '<div class="earn-verdict ' + vd.cls + '">' +
+      '<div class="earn-verdict-ico">' + vd.ico + '</div>' +
+      '<div class="earn-verdict-ttl">' + escapeHtml(vd.lbl) + '</div>' +
+      '<div class="earn-verdict-reason">' + escapeHtml(r.verdictReason || '') + '</div>' +
+      '<div class="earn-action-box">' +
+        '<div class="earn-action-box-lbl">▶ 翌日のアクション</div>' +
+        escapeHtml(r.nextAction || '—') +
+      '</div>' +
+    '</div>';
+
+  var el = document.getElementById('earnResults');
+  el.innerHTML = html;
+  el.style.display = 'block';
+  el.scrollIntoView({ behavior: 'smooth' });
+}
+
+/* ===== 初期化 ===== */
+function initApp() {
+  loadSidebarOrder();
+  refreshSidebar();
+
+  var savedModel = localStorage.getItem('funda_model');
+  if (savedModel === 'opus' || savedModel === 'sonnet') {
+    setModel(savedModel);
+  } else {
+    setModel('sonnet');
+  }
+
+  var codeInput = document.getElementById('codeInput');
+  if (codeInput) {
+    codeInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') runAnalysis();
+    });
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeSidebar();
+      closeConfirm();
+    }
+  });
+}
+
+setAnalysisMode('backend');
+setBackendUrls(
+  '/api/analyze',
+  '/api/earnings'
+);
+
+initApp();
+</script>
+</body>
+</html>
